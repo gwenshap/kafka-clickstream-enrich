@@ -15,4 +15,8 @@ public class Search {
     public int getUserID() {
         return userID;
     }
+
+    public String getSearchTerms() {
+        return searchTerms;
+    }
 }

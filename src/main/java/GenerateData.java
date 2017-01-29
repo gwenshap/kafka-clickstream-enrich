@@ -119,6 +119,12 @@ public class GenerateData {
         records.add(new ProducerRecord(Constants.PAGE_VIEW_TOPIC, view4.getUserID(), gson.toJson(view4)));
         records.add(new ProducerRecord(Constants.PAGE_VIEW_TOPIC, view5.getUserID(), gson.toJson(view5)));
 
+        // Click for an unknown user without searches - we want to make sure we have results for those too.
+
+        PageView view6 = new PageView(-1, "product/osprey-atmos-65-ag-pack");
+        records.add(new ProducerRecord(Constants.PAGE_VIEW_TOPIC, view6.getUserID(), gson.toJson(view6)));
+
+
         // Send additional events
         for (ProducerRecord record: records)
             producer.send(record, (RecordMetadata r, Exception e) -> {

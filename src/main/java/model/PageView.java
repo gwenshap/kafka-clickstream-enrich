@@ -15,4 +15,8 @@ public class PageView {
     public int getUserID() {
         return userID;
     }
+
+    public String getPage() {
+        return page;
+    }
 }

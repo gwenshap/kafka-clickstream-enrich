@@ -27,4 +27,15 @@ public class UserProfile {
         return this;
     }
 
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getZipcode() {
+        return zipcode;
+    }
+
+    public String[] getInterests() {
+        return interests;
+    }
 }
