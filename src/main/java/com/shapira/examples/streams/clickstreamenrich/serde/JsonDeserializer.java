@@ -1,4 +1,4 @@
-package serde;
+package com.shapira.examples.streams.clickstreamenrich.serde;
 
 
 import com.google.gson.Gson;

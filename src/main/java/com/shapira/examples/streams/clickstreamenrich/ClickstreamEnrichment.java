@@ -1,10 +1,13 @@
-import com.sun.tools.internal.jxc.ap.Const;
-import model.PageView;
-import model.Search;
-import model.UserActivity;
-import model.UserProfile;
+package com.shapira.examples.streams.clickstreamenrich;
+
+import com.shapira.examples.streams.clickstreamenrich.model.PageView;
+import com.shapira.examples.streams.clickstreamenrich.model.Search;
+import com.shapira.examples.streams.clickstreamenrich.model.UserActivity;
+import com.shapira.examples.streams.clickstreamenrich.model.UserProfile;
+import com.shapira.examples.streams.clickstreamenrich.serde.JsonDeserializer;
+import com.shapira.examples.streams.clickstreamenrich.serde.JsonSerializer;
+import com.shapira.examples.streams.clickstreamenrich.serde.WrapperSerde;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
@@ -12,21 +15,15 @@ import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KStreamBuilder;
 import org.apache.kafka.streams.kstream.KTable;
-import serde.JsonDeserializer;
-import serde.JsonSerializer;
-import serde.WrapperSerde;
 
 import java.util.Properties;
 
-/**
- * Created by gwen on 1/29/17.
- */
 public class ClickstreamEnrichment {
 
     public static void main(String[] args) throws Exception {
 
         Properties props = new Properties();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "stockstat");
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "clicks");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Constants.BROKER);
         // Since each step in the stream will involve different objects, we can't use default Serde
 
@@ -47,12 +44,22 @@ public class ClickstreamEnrichment {
         KStream<Integer, Search> searches = builder.stream(Serdes.Integer(), new SearchSerde(), Constants.SEARCH_TOPIC);
 
         KStream<Integer, UserActivity> viewsWithProfile = views.leftJoin(profiles,
-                    (page, profile) -> new UserActivity(
-                        profile.getUserID(), profile.getUserName(), profile.getZipcode(), profile.getInterests(), "", page.getPage()));
-        //,Serdes.Integer(), new UserActivitySerde()
+                    (page, profile) -> {
+                        if (profile != null)
+                            return new UserActivity(profile.getUserID(), profile.getUserName(), profile.getZipcode(), profile.getInterests(), "", page.getPage());
+                        else
+                           return new UserActivity(-1, "", "", null, "", page.getPage());
+
+        });
 
         KStream<Integer, UserActivity> userActivityKStream = viewsWithProfile.leftJoin(searches,
-                (userActivity, search) -> userActivity.updateSearch(search.getSearchTerms()),
+                (userActivity, search) -> {
+                    if (search != null)
+                        userActivity.updateSearch(search.getSearchTerms());
+                    else
+                        userActivity.updateSearch("");
+                    return userActivity;
+                },
                 JoinWindows.of(1000), Serdes.Integer(), new UserActivitySerde(), new SearchSerde());
 
         userActivityKStream.to(Serdes.Integer(), new UserActivitySerde(), Constants.USER_ACTIVITY_TOPIC);

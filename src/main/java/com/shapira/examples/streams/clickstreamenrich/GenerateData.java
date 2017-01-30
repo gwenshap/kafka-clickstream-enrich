@@ -1,11 +1,12 @@
+package com.shapira.examples.streams.clickstreamenrich;
+
 import com.google.gson.Gson;
-import model.PageView;
-import model.Search;
-import model.UserProfile;
+import com.shapira.examples.streams.clickstreamenrich.model.PageView;
+import com.shapira.examples.streams.clickstreamenrich.model.Search;
+import com.shapira.examples.streams.clickstreamenrich.model.UserProfile;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import serde.JsonSerializer;
 
 import java.util.ArrayList;
 import java.util.List;
