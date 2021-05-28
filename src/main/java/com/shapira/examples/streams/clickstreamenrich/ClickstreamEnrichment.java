@@ -11,11 +11,15 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.JoinWindows;
+import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KStreamBuilder;
+import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Produced;
 
+import java.time.Duration;
 import java.util.Properties;
 
 public class ClickstreamEnrichment {
@@ -32,16 +36,11 @@ public class ClickstreamEnrichment {
         // https://cwiki.apache.org/confluence/display/KAFKA/Kafka+Streams+Application+Reset+Tool
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        // work-around for an issue around timing of creating internal topics
-        // this was resolved in 0.10.2.0 and above
-        // don't use in large production apps - this increases network load
-        // props.put(CommonClientConfigs.METADATA_MAX_AGE_CONFIG, 500);
+        StreamsBuilder builder = new StreamsBuilder();
 
-        KStreamBuilder builder = new KStreamBuilder();
-
-        KStream<Integer, PageView> views = builder.stream(Serdes.Integer(), new PageViewSerde(), Constants.PAGE_VIEW_TOPIC);
-        KTable<Integer, UserProfile> profiles = builder.table(Serdes.Integer(), new ProfileSerde(), Constants.USER_PROFILE_TOPIC, "profile-store");
-        KStream<Integer, Search> searches = builder.stream(Serdes.Integer(), new SearchSerde(), Constants.SEARCH_TOPIC);
+        KStream<Integer, PageView> views = builder.stream(Constants.PAGE_VIEW_TOPIC, Consumed.with(Serdes.Integer(), new PageViewSerde()));
+        KTable<Integer, UserProfile> profiles = builder.table(Constants.USER_PROFILE_TOPIC, Consumed.with(Serdes.Integer(), new ProfileSerde()));
+        KStream<Integer, Search> searches = builder.stream(Constants.SEARCH_TOPIC, Consumed.with( Serdes.Integer(), new SearchSerde()));
 
         KStream<Integer, UserActivity> viewsWithProfile = views.leftJoin(profiles,
                     (page, profile) -> {
@@ -60,11 +59,12 @@ public class ClickstreamEnrichment {
                         userActivity.updateSearch("");
                     return userActivity;
                 },
-                JoinWindows.of(1000), Serdes.Integer(), new UserActivitySerde(), new SearchSerde());
+                JoinWindows.of(Duration.ofSeconds(1)),
+                Joined.with(Serdes.Integer(), new UserActivitySerde(), new SearchSerde()));
 
-        userActivityKStream.to(Serdes.Integer(), new UserActivitySerde(), Constants.USER_ACTIVITY_TOPIC);
+        userActivityKStream.to(Constants.USER_ACTIVITY_TOPIC, Produced.with(Serdes.Integer(), new UserActivitySerde()));
 
-        KafkaStreams streams = new KafkaStreams(builder, props);
+        KafkaStreams streams = new KafkaStreams(builder.build(), props);
 
         streams.cleanUp();
 

@@ -41,7 +41,7 @@ public class GenerateData {
 
         // Two users
         String[] interests1 = {"Surfing", "Hiking"};
-        UserProfile user1 = new UserProfile(1, "Mathias", "94301", interests1 );
+        UserProfile user1 = new UserProfile(1, "Matthias", "94301", interests1 );
 
         String[] interests2 = {"Ski", "Dancing"};
         UserProfile user2 = new UserProfile(2, "Anna", "94302", interests2);
