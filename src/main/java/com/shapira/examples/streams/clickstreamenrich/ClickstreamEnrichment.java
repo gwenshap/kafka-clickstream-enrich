@@ -13,11 +13,11 @@ import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.JoinWindows;
-import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.StreamJoined;
 
 import java.time.Duration;
 import java.util.Properties;
@@ -60,7 +60,7 @@ public class ClickstreamEnrichment {
                     return userActivity;
                 },
                 JoinWindows.of(Duration.ofSeconds(1)),
-                Joined.with(Serdes.Integer(), new UserActivitySerde(), new SearchSerde()));
+                StreamJoined.with(Serdes.Integer(), new UserActivitySerde(), new SearchSerde()));
 
         userActivityKStream.to(Constants.USER_ACTIVITY_TOPIC, Produced.with(Serdes.Integer(), new UserActivitySerde()));
 
@@ -81,25 +81,25 @@ public class ClickstreamEnrichment {
 
     static public final class PageViewSerde extends WrapperSerde<PageView> {
         public PageViewSerde() {
-            super(new JsonSerializer<PageView>(), new JsonDeserializer<PageView>(PageView.class));
+            super(new JsonSerializer<>(), new JsonDeserializer<>(PageView.class));
         }
     }
 
     static public final class ProfileSerde extends WrapperSerde<UserProfile> {
         public ProfileSerde() {
-            super(new JsonSerializer<UserProfile>(), new JsonDeserializer<UserProfile>(UserProfile.class));
+            super(new JsonSerializer<>(), new JsonDeserializer<>(UserProfile.class));
         }
     }
 
     static public final class SearchSerde extends WrapperSerde<Search> {
         public SearchSerde() {
-            super(new JsonSerializer<Search>(), new JsonDeserializer<Search>(Search.class));
+            super(new JsonSerializer<>(), new JsonDeserializer<>(Search.class));
         }
     }
 
     static public final class UserActivitySerde extends WrapperSerde<UserActivity> {
         public UserActivitySerde() {
-            super(new JsonSerializer<UserActivity>(), new JsonDeserializer<UserActivity>(UserActivity.class));
+            super(new JsonSerializer<>(), new JsonDeserializer<>(UserActivity.class));
         }
     }
 }
